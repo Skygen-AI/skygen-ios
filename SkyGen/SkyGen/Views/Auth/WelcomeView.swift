@@ -10,6 +10,11 @@ import SwiftUI
 struct WelcomeView: View {
     @Environment(\.theme) private var theme
     
+    // Состояния для анимации элементов UI
+    @State private var imageAppeared = false
+    @State private var textAppeared = false
+    @State private var buttonAppeared = false
+    
     var body: some View {
         ZStack {
             // Background
@@ -33,18 +38,24 @@ struct WelcomeView: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 220, height: 220)
                         .shadow(color: Color.black.opacity(0.6), radius: 60, x: 10, y: 25)
+                        .scaleEffect(imageAppeared ? 1.0 : 0.3)
+                        .opacity(imageAppeared ? 1.0 : 0.0)
                     
                     // Welcome text
                     VStack(spacing: theme.spacing.xs) {
                         Text("Welcome to")
                             .textStyle(.titleLarge)
                             .foregroundColor(theme.colors.textSecondary)
+                            .shadow(color: Color.black.opacity(0.6), radius: 30)
                         
                         Text("SkyGen")
                             .textStyle(.displayLarge)
                             .foregroundColor(theme.colors.textPrimary)
+                            .shadow(color: Color.black.opacity(0.6), radius: 40)
                     }
                     .padding(.top, 40)
+                    .offset(y: textAppeared ? 0 : 50)
+                    .opacity(textAppeared ? 1.0 : 0.0)
                 }
                 
                 Spacer()
@@ -56,7 +67,38 @@ struct WelcomeView: View {
                 .buttonStyle(PrimaryButtonStyle())
                 .padding(.horizontal, theme.spacing.screenPadding)
                 .padding(.bottom, theme.spacing.screenPadding)
+                .scaleEffect(buttonAppeared ? 1.0 : 0.8)
+                .opacity(buttonAppeared ? 1.0 : 0.0)
                 
+            }
+        }
+        .onAppear {
+            startUIAnimations()
+        }
+    }
+    
+    // MARK: - UI Animation Control
+    private func startUIAnimations() {
+        // Шаг 1: Картинка появляется первой
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation(.easeOut(duration: 1.5)) {
+                imageAppeared = true
+            }
+        }
+        
+        // Шаг 2: Текст появляется после картинки
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            withAnimation(.easeInOut(duration: 1.0)) {
+                textAppeared = true
+            }
+        }
+        
+        // Шаг 3: Фон запускается после текста (уже определен в AnimatedLinesBackground)
+        
+        // Шаг 4: Кнопка появляется на 2 секунды раньше
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+            withAnimation(.easeInOut(duration: 0.8)) {
+                buttonAppeared = true
             }
         }
     }
@@ -87,10 +129,10 @@ struct AnimatedLinesBackground: View {
         }
         .onAppear {
             // Первый шаг: устанавливаем начальное значение
-            lineOffset = -750
+            lineOffset = -850
             
-            // Первый шаг: от -750 до 250 за 7 секунд
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            // Первый шаг: от -750 до 250 за 5 секунд (запускается после текста)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 withAnimation(.easeInOut(duration: 5)) {
                     lineOffset = 250
                 }
