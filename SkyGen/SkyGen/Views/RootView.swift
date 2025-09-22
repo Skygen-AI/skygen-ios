@@ -12,19 +12,34 @@ struct RootView: View {
     @StateObject private var onboardingManager = OnboardingManager()
     @Environment(\.theme) private var theme
     @State private var showWelcome = true
+    @State private var showInitialSetup = false
     
     var body: some View {
         Group {
             if showWelcome {
-                WelcomeView(onGetStarted: {
-                    withAnimation(theme.motion.easing.emphasized) {
-                        showWelcome = false
+                WelcomeView(
+                    onGetStarted: {
+                        withAnimation(theme.motion.easing.emphasized) {
+                            showWelcome = false
+                        }
+                    },
+                    onSAMLSSO: {
+                        withAnimation(theme.motion.easing.emphasized) {
+                            showWelcome = false
+                            showInitialSetup = true
+                        }
                     }
-                })
+                )
                 .transition(.asymmetric(
                     insertion: .move(edge: .leading),
                     removal: .move(edge: .leading)
                 ))
+            } else if showInitialSetup {
+                InitialSetupView()
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing),
+                        removal: .move(edge: .leading)
+                    ))
             } else {
                 switch authManager.authState {
                 case .unauthenticated:
@@ -60,6 +75,7 @@ struct RootView: View {
             }
         }
         .animation(theme.motion.easing.emphasized, value: showWelcome)
+        .animation(theme.motion.easing.emphasized, value: showInitialSetup)
         .animation(theme.motion.easing.emphasized, value: authManager.authState)
         .animation(theme.motion.easing.standard, value: authManager.needsBiometricAuth)
         .animation(theme.motion.easing.emphasized, value: onboardingManager.isOnboardingCompleted)

@@ -1,0 +1,5 @@
+---
+description: Answer in users language, BUT ONLY USE ENGLISH IN UI UNLESS EXPLICITLY ASKED TO USE OTHER LANGUAGE
+globs:
+alwaysApply: true
+---

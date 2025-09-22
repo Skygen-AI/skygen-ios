@@ -9,7 +9,9 @@ import SwiftUI
 
 struct WelcomeView: View {
     @Environment(\.theme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     let onGetStarted: () -> Void
+    let onSAMLSSO: () -> Void
     
     // Состояния для анимации элементов UI
     @State private var imageAppeared = false
@@ -29,11 +31,16 @@ struct WelcomeView: View {
                 .rotationEffect(.degrees(-30))
                 .offset(x: 20, y: -85)
             
-            // Затемнение при показе опций входа
+            // Затемнение при показе опций входа - с возможностью возврата
             if showSignInOptions {
                 Color.black.opacity(0.6)
                     .ignoresSafeArea()
                     .transition(.opacity)
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.8)) {
+                            showSignInOptions = false
+                        }
+                    }
             }
             
             VStack {
@@ -42,36 +49,49 @@ struct WelcomeView: View {
                     Spacer()
                 }
                 
-                // Одна картинка - анимированно трансформируется
-                Image("WelcomeIcon")
+                // Одна картинка - анимированно трансформируется (адаптивная к теме)
+                Image(colorScheme == .dark ? "WelcomeIconDark" : "WelcomeIconLight")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: showSignInOptions ? 120 : 220, height: showSignInOptions ? 120 : 220)
-                    .shadow(color: Color.black.opacity(0.6), radius: 60, x: 10, y: 25)
+                    .shadow(color: Color.black.opacity(0.8), radius: 60, x: 10, y: 25)
                     .scaleEffect(imageAppeared ? 1.0 : 0.3)
                     .opacity(imageAppeared ? 1.0 : 0.0)
                     .padding(.top, showSignInOptions ? theme.spacing.xl : 0)
+                    .onTapGesture {
+                        // Предотвращаем закрытие при тапе на картинку
+                    }
                 
-                // Текст - исчезает при показе опций входа
-                if !showSignInOptions {
-                    VStack(spacing: theme.spacing.xs) {
+                // Текст - остается и перемещается вместе с картинкой
+                VStack(spacing: theme.spacing.xs) {
+                    ZStack {
                         Text("Welcome to")
                             .font(.system(size: 32, weight: .medium, design: .default))
                             .foregroundColor(theme.colors.textSecondary)
-                            .shadow(color: Color.black.opacity(0.6), radius: 30)
+                            .shadow(color: colorScheme == .dark ? Color.black.opacity(0.6): Color.white.opacity(0.6),
+                                        radius: 30)
+                            .opacity(showSignInOptions ? 0 : 1)
+                            .scaleEffect(showSignInOptions ? 0.8 : 1.0)
                         
-                        Text("Skygen")
-                            .font(.system(size: 64, weight: .bold, design: .default))
-                            .foregroundColor(theme.colors.textPrimary)
-                            .shadow(color: Color.black.opacity(0.6), radius: 40)
+                        Text("Sign in to")
+                            .font(.system(size: 32, weight: .medium, design: .default))
+                            .foregroundColor(theme.colors.textSecondary)
+                            .shadow(color: Color.black.opacity(0.6), radius: 30)
+                            .opacity(showSignInOptions ? 1 : 0)
+                            .scaleEffect(showSignInOptions ? 1.0 : 0.8)
                     }
-                    .padding(.top, 40)
-                    .offset(y: textAppeared ? 0 : 50)
-                    .opacity(textAppeared ? 1.0 : 0.0)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .bottom).combined(with: .opacity),
-                        removal: .move(edge: .top).combined(with: .opacity)
-                    ))
+                    
+                    Text("Skygen")
+                        .font(.system(size: 64, weight: .bold, design: .default))
+                        .foregroundColor(theme.colors.textPrimary)
+                        .shadow(color: colorScheme == .dark ? Color.black.opacity(0.6): Color.white.opacity(0.6),
+                                    radius: 40)
+                }
+                .padding(.top, showSignInOptions ? 20 : 40)
+                .offset(y: textAppeared ? 0 : 50)
+                .opacity(textAppeared ? 1.0 : 0.0)
+                .onTapGesture {
+                    // Предотвращаем закрытие при тапе на текст
                 }
                 
                 // Нижний spacer
@@ -139,7 +159,7 @@ struct WelcomeView: View {
             
             // SAML SSO
             Button(action: {
-                // TODO: SAML SSO
+                onSAMLSSO()
             }) {
                 HStack {
                     Image(systemName: "building.2.fill")
@@ -164,6 +184,9 @@ struct WelcomeView: View {
             insertion: .move(edge: .bottom).combined(with: .opacity),
             removal: .move(edge: .bottom).combined(with: .opacity)
         ))
+        .onTapGesture {
+            // Предотвращаем закрытие при тапе на область кнопок
+        }
     }
     
     // MARK: - UI Animation Control
@@ -222,14 +245,14 @@ struct AnimatedLinesBackground: View {
             
             // Первый шаг: от -750 до 250 за 5 секунд (запускается после текста)
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                withAnimation(.easeInOut(duration: 5)) {
-                    lineOffset = 250
+                withAnimation(.easeInOut(duration: 3.4)) {
+                    lineOffset = -300
                 }
                 
                 // Второй шаг: циклическая анимация от 250 до -300 и обратно
-                DispatchQueue.main.asyncAfter(deadline: .now() + 4.8) {
-                    withAnimation(.easeInOut(duration: 25).repeatForever(autoreverses: true)) {
-                        lineOffset = -300
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    withAnimation(.easeInOut(duration: 16).repeatForever(autoreverses: true)) {
+                        lineOffset = 250
                     }
                 }
             }
@@ -324,8 +347,13 @@ struct AnimatedLine: View {
 
 #Preview {
     ThemeProvider {
-        WelcomeView(onGetStarted: {
-            print("Get Started tapped")
-        })
+        WelcomeView(
+            onGetStarted: {
+                print("Get Started tapped")
+            },
+            onSAMLSSO: {
+                print("SAML SSO tapped")
+            }
+        )
     }
 }
