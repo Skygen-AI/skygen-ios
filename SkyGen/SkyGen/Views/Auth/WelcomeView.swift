@@ -9,11 +9,13 @@ import SwiftUI
 
 struct WelcomeView: View {
     @Environment(\.theme) private var theme
+    let onGetStarted: () -> Void
     
     // Состояния для анимации элементов UI
     @State private var imageAppeared = false
     @State private var textAppeared = false
     @State private var buttonAppeared = false
+    @State private var showSignInOptions = false
     
     var body: some View {
         ZStack {
@@ -27,28 +29,38 @@ struct WelcomeView: View {
                 .rotationEffect(.degrees(-30))
                 .offset(x: 20, y: -85)
             
+            // Затемнение при показе опций входа
+            if showSignInOptions {
+                Color.black.opacity(0.6)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+            }
+            
             VStack {
-                Spacer()
+                // Верхний spacer - исчезает в режиме Sign In
+                if !showSignInOptions {
+                    Spacer()
+                }
                 
-                // Welcome content
-                VStack(spacing: theme.spacing.lg) {
-                    // Welcome icon from assets
-                    Image("WelcomeIcon")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 220, height: 220)
-                        .shadow(color: Color.black.opacity(0.6), radius: 60, x: 10, y: 25)
-                        .scaleEffect(imageAppeared ? 1.0 : 0.3)
-                        .opacity(imageAppeared ? 1.0 : 0.0)
-                    
-                    // Welcome text
+                // Одна картинка - анимированно трансформируется
+                Image("WelcomeIcon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: showSignInOptions ? 120 : 220, height: showSignInOptions ? 120 : 220)
+                    .shadow(color: Color.black.opacity(0.6), radius: 60, x: 10, y: 25)
+                    .scaleEffect(imageAppeared ? 1.0 : 0.3)
+                    .opacity(imageAppeared ? 1.0 : 0.0)
+                    .padding(.top, showSignInOptions ? theme.spacing.xl : 0)
+                
+                // Текст - исчезает при показе опций входа
+                if !showSignInOptions {
                     VStack(spacing: theme.spacing.xs) {
                         Text("Welcome to")
                             .font(.system(size: 32, weight: .medium, design: .default))
                             .foregroundColor(theme.colors.textSecondary)
                             .shadow(color: Color.black.opacity(0.6), radius: 30)
                         
-                        Text("SkyGen")
+                        Text("Skygen")
                             .font(.system(size: 64, weight: .bold, design: .default))
                             .foregroundColor(theme.colors.textPrimary)
                             .shadow(color: Color.black.opacity(0.6), radius: 40)
@@ -56,25 +68,102 @@ struct WelcomeView: View {
                     .padding(.top, 40)
                     .offset(y: textAppeared ? 0 : 50)
                     .opacity(textAppeared ? 1.0 : 0.0)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .move(edge: .top).combined(with: .opacity)
+                    ))
                 }
                 
+                // Нижний spacer
                 Spacer()
                 
-                // Login button
-                Button("Get Started") {
-                    // TODO: Navigate to login
+                // Кнопки входа или Get Started
+                if showSignInOptions {
+                    signInOptionsView
+                } else {
+                    Button("Get Started") {
+                        withAnimation(.easeInOut(duration: 0.8)) {
+                            showSignInOptions = true
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .padding(.horizontal, theme.spacing.screenPadding)
+                    .padding(.bottom, theme.spacing.screenPadding)
+                    .scaleEffect(buttonAppeared ? 1.0 : 0.8)
+                    .opacity(buttonAppeared ? 1.0 : 0.0)
                 }
-                .buttonStyle(PrimaryButtonStyle())
-                .padding(.horizontal, theme.spacing.screenPadding)
-                .padding(.bottom, theme.spacing.screenPadding)
-                .scaleEffect(buttonAppeared ? 1.0 : 0.8)
-                .opacity(buttonAppeared ? 1.0 : 0.0)
-                
             }
         }
         .onAppear {
             startUIAnimations()
         }
+    }
+    
+    // MARK: - Sign In Options View
+    private var signInOptionsView: some View {
+        VStack(spacing: theme.spacing.md) {
+            // Continue with Email
+            Button(action: {
+                // TODO: Navigate to email sign in
+                onGetStarted()
+            }) {
+                HStack {
+                    Image(systemName: "envelope.fill")
+                        .foregroundColor(.white)
+                    Text("Continue with Email")
+                        .foregroundColor(.white)
+                        .font(.system(size: 16, weight: .medium))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(theme.colors.accent)
+                .cornerRadius(theme.radius.button)
+            }
+            
+            // Continue with Google
+            Button(action: {
+                // TODO: Google sign in
+            }) {
+                HStack {
+                    Image(systemName: "globe")
+                        .foregroundColor(.black)
+                    Text("Continue with Google")
+                        .foregroundColor(.black)
+                        .font(.system(size: 16, weight: .medium))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(.white)
+                .cornerRadius(theme.radius.button)
+            }
+            
+            // SAML SSO
+            Button(action: {
+                // TODO: SAML SSO
+            }) {
+                HStack {
+                    Image(systemName: "building.2.fill")
+                        .foregroundColor(theme.colors.textSecondary)
+                    Text("SAML SSO")
+                        .foregroundColor(theme.colors.textSecondary)
+                        .font(.system(size: 16, weight: .medium))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(theme.colors.surface)
+                .cornerRadius(theme.radius.button)
+                .overlay(
+                    RoundedRectangle(cornerRadius: theme.radius.button)
+                        .stroke(theme.colors.border, lineWidth: 1)
+                )
+            }
+        }
+        .padding(.horizontal, theme.spacing.screenPadding)
+        .padding(.bottom, theme.spacing.screenPadding)
+        .transition(.asymmetric(
+            insertion: .move(edge: .bottom).combined(with: .opacity),
+            removal: .move(edge: .bottom).combined(with: .opacity)
+        ))
     }
     
     // MARK: - UI Animation Control
@@ -235,6 +324,8 @@ struct AnimatedLine: View {
 
 #Preview {
     ThemeProvider {
-        WelcomeView()
+        WelcomeView(onGetStarted: {
+            print("Get Started tapped")
+        })
     }
 }

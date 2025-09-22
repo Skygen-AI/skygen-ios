@@ -11,41 +11,55 @@ struct RootView: View {
     @StateObject private var authManager = AuthenticationManager()
     @StateObject private var onboardingManager = OnboardingManager()
     @Environment(\.theme) private var theme
+    @State private var showWelcome = true
     
     var body: some View {
         Group {
-            switch authManager.authState {
-            case .unauthenticated:
-                SignInView()
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing),
-                        removal: .move(edge: .leading)
-                    ))
-                
-            case .authenticating:
-                SkyLoadingState(message: "Вход в систему...")
-                    .transition(.opacity)
-                
-            case .authenticated:
-                if authManager.needsBiometricAuth {
-                    BiometricAuthView()
+            if showWelcome {
+                WelcomeView(onGetStarted: {
+                    withAnimation(theme.motion.easing.emphasized) {
+                        showWelcome = false
+                    }
+                })
+                .transition(.asymmetric(
+                    insertion: .move(edge: .leading),
+                    removal: .move(edge: .leading)
+                ))
+            } else {
+                switch authManager.authState {
+                case .unauthenticated:
+                    SignInView()
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing),
+                            removal: .move(edge: .leading)
+                        ))
+                    
+                case .authenticating:
+                    SkyLoadingState(message: "Вход в систему...")
                         .transition(.opacity)
-                } else if !onboardingManager.isOnboardingCompleted {
-                    OnboardingView()
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing),
-                            removal: .move(edge: .leading)
-                        ))
-                        .environmentObject(onboardingManager)
-                } else {
-                    MainTabView()
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing),
-                            removal: .move(edge: .leading)
-                        ))
+                    
+                case .authenticated:
+                    if authManager.needsBiometricAuth {
+                        BiometricAuthView()
+                            .transition(.opacity)
+                    } else if !onboardingManager.isOnboardingCompleted {
+                        OnboardingView()
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing),
+                                removal: .move(edge: .leading)
+                            ))
+                            .environmentObject(onboardingManager)
+                    } else {
+                        MainTabView()
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing),
+                                removal: .move(edge: .leading)
+                            ))
+                    }
                 }
             }
         }
+        .animation(theme.motion.easing.emphasized, value: showWelcome)
         .animation(theme.motion.easing.emphasized, value: authManager.authState)
         .animation(theme.motion.easing.standard, value: authManager.needsBiometricAuth)
         .animation(theme.motion.easing.emphasized, value: onboardingManager.isOnboardingCompleted)
