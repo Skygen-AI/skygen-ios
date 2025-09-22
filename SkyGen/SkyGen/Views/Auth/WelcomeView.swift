@@ -44,12 +44,12 @@ struct WelcomeView: View {
                     // Welcome text
                     VStack(spacing: theme.spacing.xs) {
                         Text("Welcome to")
-                            .textStyle(.titleLarge)
+                            .font(.system(size: 32, weight: .medium, design: .default))
                             .foregroundColor(theme.colors.textSecondary)
                             .shadow(color: Color.black.opacity(0.6), radius: 30)
                         
                         Text("SkyGen")
-                            .textStyle(.displayLarge)
+                            .font(.system(size: 64, weight: .bold, design: .default))
                             .foregroundColor(theme.colors.textPrimary)
                             .shadow(color: Color.black.opacity(0.6), radius: 40)
                     }
@@ -155,6 +155,7 @@ struct AnimatedLine: View {
     let offset: CGFloat
     let screenWidth: CGFloat
     @Environment(\.theme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     
     private let deviceIcons = [
         "iphone", "ipad", "macbook", "applewatch", "appletv",
@@ -170,6 +171,18 @@ struct AnimatedLine: View {
     
     // Создаем рандомный массив иконок для каждой линии
     @State private var randomizedIcons: [String] = []
+    
+    // Адаптивный цвет иконок для разных тем
+    private var adaptiveIconColor: Color {
+        // Используем SwiftUI colorScheme из Environment
+        if colorScheme == .light {
+            // В светлой теме - черный с большей непрозрачностью
+            return Color.black.opacity(0.9)
+        } else {
+            // В темной теме - белый с меньшей непрозрачностью
+            return Color.white.opacity(0.3)
+        }
+    }
     
     var body: some View {
         let xOffset = isEven ? -offset : offset
@@ -211,9 +224,9 @@ struct AnimatedLine: View {
         HStack(spacing: 10) {
             ForEach(0..<30, id: \.self) { iconIndex in
                 if !randomizedIcons.isEmpty {
-                    Image(systemName: randomizedIcons[iconIndex % randomizedIcons.count])
-                        .font(.system(size: 24, weight: .ultraLight))
-                        .foregroundColor(theme.colors.textTertiary.opacity(0.8))
+                Image(systemName: randomizedIcons[iconIndex % randomizedIcons.count])
+                    .font(.system(size: 24, weight: .ultraLight))
+                    .foregroundColor(adaptiveIconColor)
                 }
             }
         }
