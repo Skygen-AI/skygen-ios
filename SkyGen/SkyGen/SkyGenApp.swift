@@ -11,7 +11,9 @@ import SwiftUI
 struct SkyGenApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ThemeProvider {
+                RootView()
+            }
         }
     }
 }
